@@ -2,7 +2,7 @@ import { Copy } from "@/components/Copy";
 import { Game } from "@/stores/matchStore";
 import { useMatchStore } from "@/stores/matchStore";
 import { CutOutBtn, CutOutBtnPrimary } from "@/components/CutOutBtn";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ModalRef } from "@/layout/ModalLayout";
 import { CreateMatchModal } from "@/components/modals/CreateMatchModal";
 import { JoinLobbyModal } from "@/components/modals/JoinLobbyModal";

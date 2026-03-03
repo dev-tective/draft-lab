@@ -1,43 +1,37 @@
 import { Icon } from "@iconify/react";
 import { useHeroesStore } from "../../stores/heroesStore";
-import { Tag } from "@/stores/tagStore";
 
-interface TagOptionProps {
-    tag: Tag;
-}
 
-const TagOption = ({ tag }: TagOptionProps) => {
-    const { filterHeroesByLane } = useHeroesStore();
-    // const { selectedLane } = useTagsStore();
+// const TagOption = () => {
 
-    const handleSelectLane = () => {
-        // filterHeroesByLane(tag.id === selectedLane ? 0 : tag.id);
-    }
+//     // const { selectedLane } = useTagsStore();
 
-    return (
-        <button
-            // className={`h-full aspect-[1.5/1] hover:bg-slate-700 transition-colors
-            //     cursor-pointer border-r border-slate-700 last:border-r-0
-            //     ${tag.id === selectedLane ? 'bg-slate-700' : ''}`}
-            // title={tag.name}
-            onClick={handleSelectLane}
-        >
-            {/* {tag.image ? (
-                <div className={`mx-auto h-full aspect-square scale-55
-                        ${tag.id === selectedLane ? 'bg-slate-300' : 'bg-slate-400'}`}
-                    style={{
-                        maskImage: `url(${tag.image})`,
-                        maskSize: 'cover',
-                        maskPosition: 'center',
-                        maskRepeat: 'no-repeat',
-                    }}
-                />
-            ) : (
-                <span>{tag.name}</span>
-            )} */}
-        </button>
-    );
-}
+  
+
+//     return (
+//         <button
+//             // className={`h-full aspect-[1.5/1] hover:bg-slate-700 transition-colors
+//             //     cursor-pointer border-r border-slate-700 last:border-r-0
+//             //     ${tag.id === selectedLane ? 'bg-slate-700' : ''}`}
+//             // title={tag.name}
+
+//         >
+//             {/* {tag.image ? (
+//                 <div className={`mx-auto h-full aspect-square scale-55
+//                         ${tag.id === selectedLane ? 'bg-slate-300' : 'bg-slate-400'}`}
+//                     style={{
+//                         maskImage: `url(${tag.image})`,
+//                         maskSize: 'cover',
+//                         maskPosition: 'center',
+//                         maskRepeat: 'no-repeat',
+//                     }}
+//                 />
+//             ) : (
+//                 <span>{tag.name}</span>
+//             )} */}
+//         </button>
+//     );
+// }
 
 export const TagFilters = () => {
     // const {

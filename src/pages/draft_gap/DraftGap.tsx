@@ -1,8 +1,5 @@
 import { useEffect } from "react";
-import { TagFilters } from "./TagFilters";
 import { useHeroesStore } from "../../stores/heroesStore";
-import { HeroTable } from "./HeroTable";
-import { DraftSide } from "./components/DraftSide";
 
 export const DraftGap = () => {
     const { fetchHeroes } = useHeroesStore();

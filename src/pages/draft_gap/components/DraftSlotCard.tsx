@@ -1,11 +1,5 @@
-import { Icon } from "@iconify/react";
-import { useHeroesStore } from "../../../stores/heroesStore";
 
-interface Props {
-    draftSlot: any;
-}
-
-export const DraftSlotCard = ({ draftSlot }: Props) => {
+export const DraftSlotCard = () => {
     // const { draftSlotManage: { selectedSlot }, setCurrentSlot, lockedSlot } = useDraftStore();
     // const { findHeroById } = useHeroesStore();
 
