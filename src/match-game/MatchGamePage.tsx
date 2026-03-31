@@ -1,147 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams, Navigate, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
-
-import { useMatchGames } from "./hooks/useMatchGames";
+import { DragDropProvider, useDragDropMonitor } from "@dnd-kit/react";
+import { isSortable } from "@dnd-kit/react/sortable";
 import { MatchGame } from "./match-game.types";
 import { useStaffStore } from "@/staff/store/staffStore";
 import { useMatchStore } from "@/macth/store/matchStore";
-import { useHeroesStore } from "@/stores/heroesStore";
-import { Hero } from "@/stores/heroesStore";
-import { CutOutBtnPrimary } from "@/components/CutOutBtn";
+import { GameIndicator } from "./components/GameIndicator";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { usePickAndBanStore } from "./store/pickAndBanStore";
-import { Ban } from "./match-game.types";
 import { WarningMessage } from "@/components/shared/WarningMessage";
 import { DraftPanel } from "./components/DraftPanel";
-
-// ─── Ban token ───────────────────────────────────────────────────────────────
-
-interface BanTokenProps {
-    ban: Ban;
-    side: "blue" | "red";
-}
-
-const BanToken = ({ ban, side }: BanTokenProps) => {
-    const hero = (ban as any).hero as Hero | null;
-    const accent = side === "blue" ? "border-cyan-700" : "border-fuchsia-700";
-
-    return (
-        <div className={`
-            relative w-10 h-10 rounded-md border ${accent}
-            bg-slate-900/80 overflow-hidden flex-shrink-0
-            flex items-center justify-center
-        `}>
-            {hero ? (
-                <>
-                    <img src={hero.image_slot_url} alt={hero.name} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-slate-950/60 flex items-center justify-center">
-                        <Icon icon="mdi:close-thick" className="text-red-400 text-lg" />
-                    </div>
-                </>
-            ) : (
-                <Icon icon="mdi:minus" className="text-slate-600" />
-            )}
-        </div>
-    );
-};
-
-
-// ─── Hero card ───────────────────────────────────────────────────────────────
-
-const HeroCard = ({ hero }: { hero: Hero }) => (
-    <div className="
-        group flex flex-col items-center gap-1
-        p-1.5 rounded-lg
-        border border-slate-800 bg-slate-900/60
-        hover:border-cyan-500/40 hover:bg-slate-800
-        cursor-pointer transition-all
-    ">
-        <div className="relative w-full aspect-square rounded overflow-hidden">
-            <img
-                src={hero.image_slot_url}
-                alt={hero.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-            />
-        </div>
-        <span className="text-[10px] text-slate-400 text-center truncate w-full leading-tight">
-            {hero.name}
-        </span>
-    </div>
-);
-
-// ─── Center hero panel ────────────────────────────────────────────────────────
-
-const HeroesPanel = () => {
-    const { heroes, setSearchQuery, searchQuery } = useHeroesStore();
-
-    return (
-        <div className="flex flex-col gap-3 w-72 flex-1">
-            <div className="sticky top-0 bg-slate-950 pt-1 pb-2 z-10">
-                <div className="relative">
-                    <Icon
-                        icon="mdi:magnify"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                        type="text"
-                        placeholder="Buscar héroe..."
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="
-                            w-full pl-9 pr-4 py-2.5
-                            bg-slate-900 border border-slate-700
-                            rounded-lg text-sm text-slate-200
-                            placeholder-slate-600
-                            focus:outline-none focus:border-cyan-500/50
-                            transition-colors
-                        "
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-4 gap-1.5 overflow-y-auto max-h-[calc(100vh-200px)] pr-1
-                [&::-webkit-scrollbar]:w-1
-                [&::-webkit-scrollbar-track]:bg-transparent
-                [&::-webkit-scrollbar-thumb]:bg-slate-700
-                [&::-webkit-scrollbar-thumb]:rounded-full
-            ">
-                {heroes.map(hero => (
-                    <HeroCard key={hero.id} hero={hero} />
-                ))}
-            </div>
-        </div>
-    );
-};
-
-// ─── Game content ─────────────────────────────────────────────────────────────
-
-const GameContent = ({ game }: { game: MatchGame }) => {
-    const { bluePicks, redPicks, blueBans, redBans } = usePickAndBanStore();
-
-    return (
-        <div className="flex-1 flex justify-between gap-5 p-5">
-            {/* Blue side */}
-            <DraftPanel
-                team={game.team_blue!}
-                alternative={true}
-                picks={bluePicks}
-                bans={blueBans}
-            />
-
-            {/* Center: heroes */}
-            <HeroesPanel />
-
-            {/* Red side */}
-            <DraftPanel
-                team={game.team_red!}
-                alternative={false}
-                picks={redPicks}
-                bans={redBans}
-            />
-        </div>
-    );
-};
+import { HeroesPanel } from "./components/heroes/HeroPanel";
+import { Hero } from "@/stores/heroesStore";
+import { supabase } from "@/supabaseClient";
+import { useGameStore } from "@/match-game/store/gameStore";
+import { AlertType, useAlertStore } from "@/stores/alertStore";
 
 // ─── Access denied ────────────────────────────────────────────────────────────
 
@@ -166,15 +40,37 @@ const AccessDenied = () => (
 export const MatchGamePage = () => {
     const { id } = useParams<{ id: string }>();
     const matchId = id ? Number(id) : undefined;
+    const navigate = useNavigate();
 
     const { myStaff, myStaffLoading } = useStaffStore();
+    const [localRoomId, setLocalRoomId] = useState<string | null>(null);
     const matches = useMatchStore(s => s.matches);
     const match = matches.find(m => m.id === matchId);
 
-    const { games, loading } = useMatchGames(matchId);
-    const { subscribeToGame, unsubscribe } = usePickAndBanStore();
+    const { games, loading, subscribeToMatch, unsubscribe: unsubscribeGameStore } = useGameStore();
+    const { subscribeToGame, unsubscribe: unsubscribePickAndBan } = usePickAndBanStore();
     const [currentGameId, setCurrentGameId] = useState<number | null>(null);
     const btnRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+    // Sincronizar room_id incluso si recargamos directamente
+    useEffect(() => {
+        if (match) {
+            setLocalRoomId(match.room_id);
+        } else if (matchId) {
+            supabase.from('matches').select('room_id').eq('id', matchId).single().then(({data}) => {
+                if (data) setLocalRoomId(data.room_id);
+            });
+        }
+    }, [match, matchId]);
+
+    // Suscribir al gameStore y desuscribir ambos stores en desmontaje de pagina
+    useEffect(() => {
+        if (matchId) subscribeToMatch(matchId);
+        return () => {
+            unsubscribeGameStore();
+            unsubscribePickAndBan();
+        };
+    }, [matchId]);
 
     // Auto-select first pending or first game
     useEffect(() => {
@@ -193,59 +89,96 @@ export const MatchGamePage = () => {
         });
     }, [currentGameId]);
 
-    if (!matchId) return <Navigate to="/matches" replace />;
-
-    // Guard: wait for staff data
-    if (myStaffLoading) return <LoadingSpinner message="Verificando acceso..." />;
-
-    // Guard: must have a staff entry for this match's room
-    // const hasAccess = match
-    //     ? myStaff.some(s => s.room_id === match.room_id)
-    //     : false;
-
-    // if (!hasAccess) return <AccessDenied />;
-
     const currentGame = games.find(g => g.id === currentGameId) ?? null;
 
     useEffect(() => {
         if (currentGame) {
             subscribeToGame(currentGame);
         }
-        return () => {
-            unsubscribe();
-        };
-    }, [currentGame?.id]);
+    }, [currentGame?.id, currentGame?.team_blue_id, currentGame?.team_red_id]);
+
+    if (!matchId) return <Navigate to="/matches" replace />;
+
+    // Guard: wait for staff data
+    if (myStaffLoading) return <LoadingSpinner message="Cargando acceso..." />;
+
+    // Guard: must have a staff entry for this match's room
+    const hasAccess = localRoomId 
+        ? myStaff.some(s => String(s.room_id) === String(localRoomId)) 
+        : null;
+
+    if (hasAccess === null) return <LoadingSpinner message="Verificando sala..." />;
+    if (!hasAccess) return <AccessDenied />;
 
     return (
         <div className="min-h-full flex flex-col relative">
             {/* Game tabs */}
             <div className="
                 sticky top-0 z-10
-                flex overflow-x-auto
-                w-full gap-4 p-4
-                bg-slate-950
-                border-b border-slate-700
-                [&::-webkit-scrollbar]:hidden
+                flex w-full
+                bg-slate-950 border-b border-slate-700
             ">
-                {games.map(game => (
-                    <div
-                        key={game.id}
-                        className="w-full"
-                        ref={el => { btnRefs.current[game.id] = el; }}
+                {/* Controls */}
+                <div className="flex items-center gap-3 p-4 pr-2 shrink-0 border-r border-slate-800">
+                    <button
+                        onClick={() => navigate('/matches')}
+                        className="
+                            flex items-center justify-center
+                            w-10 h-10 rounded-xl bg-slate-900 border border-slate-700
+                            text-slate-400 hover:text-cyan-400 hover:border-cyan-500 hover:bg-slate-800
+                            transition-all cursor-pointer shadow-md
+                        "
+                        title="Volver a Matches"
                     >
-                        <CutOutBtnPrimary
-                            icon={game.id === currentGameId
-                                ? "game-icons:pointy-sword"
-                                : "game-icons:bouncing-sword"}
-                            text={`Game ${game.game_number}`}
-                            active={game.id === currentGameId}
-                            onClick={() => setCurrentGameId(game.id)}
-                        />
-                    </div>
-                ))}
-                {games.length === 0 && !loading && (
-                    <p className="text-slate-500 text-sm self-center pl-2">Sin juegos registrados</p>
-                )}
+                        <Icon icon="mdi:arrow-left" className="text-2xl" />
+                    </button>
+                    <button
+                        onClick={() => {
+                            const params = `/${localRoomId}/${matchId}/${currentGame?.game_number}/overlay`;
+                            navigator.clipboard.writeText(
+                                window.location.origin + 
+                                params
+                            );
+                            useAlertStore.getState().addAlert({
+                                message: "Enlace del match copiado al portapapeles",
+                                type: AlertType.SUCCESS
+                            });
+                        }}
+                        className="
+                            flex items-center justify-center
+                            w-10 h-10 rounded-xl bg-slate-900 border border-slate-700
+                            text-slate-400 hover:text-emerald-400 hover:border-emerald-500 hover:bg-slate-800
+                            transition-all cursor-pointer shadow-md
+                        "
+                        title="Copiar link del Match"
+                    >
+                        <Icon icon="mdi:link-variant" className="text-xl" />
+                    </button>
+                </div>
+
+                {/* Game tabs scrollable */}
+                <div className="
+                    grid grid-flow-col auto-cols-[minmax(12rem,1fr)] items-stretch
+                    overflow-x-auto h-full w-full gap-3 p-3
+                    [&::-webkit-scrollbar]:hidden
+                ">
+                    {games.map(game => (
+                        <div
+                            key={game.id}
+                            className="w-full h-full relative"
+                            ref={el => { btnRefs.current[game.id] = el; }}
+                        >
+                            <GameIndicator
+                                game={game}
+                                isActive={game.id === currentGameId}
+                                onClick={() => setCurrentGameId(game.id)}
+                            />
+                        </div>
+                    ))}
+                    {games.length === 0 && !loading && (
+                        <p className="text-slate-500 text-sm self-center pl-2">Sin juegos registrados</p>
+                    )}
+                </div>
             </div>
 
             {loading ? (
@@ -260,4 +193,107 @@ export const MatchGamePage = () => {
             )}
         </div>
     );
+};
+
+const GameContent = ({ game }: { game: MatchGame }) => {
+    const { bluePicks, redPicks, blueBans, redBans } = usePickAndBanStore();
+
+    return (
+        <DragDropProvider>
+            <GameDraftMonitor />
+            
+            
+            <div className="flex-1 flex justify-between gap-5 p-5">
+                {/* Blue side */}
+                <DraftPanel
+                    team={game.team_blue!}
+                    alternative={true}
+                    picks={bluePicks}
+                    bans={blueBans}
+                />
+
+                <div className="w-[45%]">
+                    {/* Center: heroes */}
+                    <HeroesPanel game={game} />
+                </div>
+
+                {/* Red side */}
+                <DraftPanel
+                    team={game.team_red!}
+                    alternative={false}
+                    picks={redPicks}
+                    bans={redBans}
+                />
+            </div>
+        </DragDropProvider>
+    );
+};
+
+// Handles hero→pick and hero→ban drops from the shared DnD context.
+// Uses isSortable to ensure we only act when source is a HeroCard (not a pick being sorted).
+// Uses target.data to identify the destination type without relying on ID naming.
+const GameDraftMonitor = () => {
+    const { bluePicks, redPicks, blueBans, redBans, updatePick, updateBan } = usePickAndBanStore();
+
+    useDragDropMonitor({
+        onDragEnd({ operation, canceled }) {
+            if (canceled || !operation.source) return;
+
+            // Ignora a los sortables (si alguno llegara a existir)
+            if (isSortable(operation.source)) return;
+
+            const sourceData = operation.source.data as any;
+            const targetData = operation.target?.data as any;
+            if (!targetData) return;
+
+            // 1. Manejo del Drag de las manijas (Swap Player o Swap Hero)
+            if (sourceData.type === 'swapPlayer' || sourceData.type === 'swapHero') {
+                if (!targetData.pick) return; // Solo se puede hacer swap de picks
+
+                const sourcePick = sourceData.pick;
+                const targetPick = targetData.pick;
+                if (sourcePick.id === targetPick.id) return;
+
+                if (sourceData.type === 'swapPlayer') {
+                    // Muta ignorando is_locked e is_active
+                    updatePick(sourcePick.id, { player_id: targetPick.player_id });
+                    updatePick(targetPick.id, { player_id: sourcePick.player_id });
+                } else if (sourceData.type === 'swapHero') {
+                    const allPicks = [...bluePicks, ...redPicks];
+                    const actualSource = allPicks.find(p => (p as any).id === sourcePick.id);
+                    const actualTarget = allPicks.find(p => (p as any).id === targetPick.id);
+
+                    if (!actualSource || !actualTarget) return;
+
+                    // Solo intercambia si hay al menos un heroe involucrado
+                    if (!actualSource.hero_id && !actualTarget.hero_id) return;
+
+                    updatePick(actualSource.id, { hero_id: actualTarget.hero_id });
+                    updatePick(actualTarget.id, { hero_id: actualSource.hero_id });
+                }
+                return;
+            }
+
+            // 2. Manejo del Drag de los Heroes (Seteo normal)
+            const droppedHero = sourceData as Hero;
+            if (droppedHero?.id && !sourceData.type) {
+                // Hero → active Pick slot
+                if (targetData.pick) {
+                    const pick = [...bluePicks, ...redPicks].find(p => p.id === targetData.pick.id);
+                    if (!pick?.is_active) return;
+                    updatePick(pick.id, { hero_id: droppedHero.id, is_active: false, is_locked: true });
+                    return;
+                }
+
+                // Hero → active Ban slot
+                if (targetData.ban) {
+                    const ban = [...blueBans, ...redBans].find(b => b.id === targetData.ban.id);
+                    if (!ban?.is_active) return;
+                    updateBan(ban.id, { hero_id: droppedHero.id, is_active: false, is_locked: true });
+                }
+            }
+        },
+    });
+
+    return null;
 };

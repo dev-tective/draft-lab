@@ -3,6 +3,7 @@ import { Match } from "../match.types";
 import { Icon } from "@iconify/react";
 import { useNavigate } from "react-router-dom";
 import { useDeleteMatch } from "../hooks/useDeleteMatch";
+import { useUpdateMatch } from "../hooks/useUpdateMatch";
 
 interface MatchCardProps {
     match: Match;
@@ -11,6 +12,7 @@ interface MatchCardProps {
 export const MatchCard = ({ match }: MatchCardProps) => {
     const navigate = useNavigate();
     const { deleteMatch } = useDeleteMatch();
+    const { updateMatchStatus } = useUpdateMatch();
 
     // From SP definition, team_a is Red and team_b is Blue
     const teamRed = match.team_a;
@@ -30,9 +32,14 @@ export const MatchCard = ({ match }: MatchCardProps) => {
         statusIcon = "mdi:record-circle";
     }
 
+    const handleStartMatch = () => {
+        updateMatchStatus(match.id, { is_live: true });
+        navigate(`/matches/${match.id}`);
+    };
+
     return (
         <div
-            onClick={() => navigate(`/matches/${match.id}`)}
+            onClick={handleStartMatch}
             className="
                 group relative flex flex-col p-5 gap-4
                 border beveled-bl-tr rounded-tr-3xl rounded-bl-3xl border-slate-800 

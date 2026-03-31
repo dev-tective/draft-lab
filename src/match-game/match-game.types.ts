@@ -4,8 +4,8 @@ import { Player, Team } from "@/stores/teamStore";
 
 export enum GameState {
     WAITING = 'en espera',
-    IN_PROGRESS = 'en progreso',
-    FINISHED = 'finalizado',
+    IN_PROGRESS = 'en curso',
+    FINISHED = 'completado',
 }
 
 export interface MatchGame {
@@ -14,16 +14,12 @@ export interface MatchGame {
     match_id: number;
     game_number: number;
     map: Tag;
-    winner_team_id: number;
+    winner_team_id: number | null;
     team_blue_id: number;
     team_red_id: number;
     team_blue?: Team;
     team_red?: Team;
     status: GameState;
-    picksRed: Pick[];
-    picksBlue: Pick[];
-    bansRed: Ban[];
-    bansBlue: Ban[];
 }
 
 export interface Pick {

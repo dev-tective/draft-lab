@@ -39,7 +39,7 @@ export const EditTeamModal = forwardRef<ModalRef, EditTeamModalProps>(({ team },
             name: name.trim(),
             acronym: acronym?.trim() || null,
             coach: coach?.trim() || null,
-            logo_url: (useCustomLogo && logoUrl?.trim()) ? logoUrl.trim() : undefined,
+            logo_url: useCustomLogo ? (logoUrl?.trim() || null) : null,
         });
 
         if (ref && typeof ref !== 'function' && ref.current) {

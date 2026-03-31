@@ -5,7 +5,7 @@ import { ErrorMessage } from "@/components/shared/ErrorMessage";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { TagSelect } from "@/components/TagSelect";
 import { CutOutBtnPrimary } from "@/components/CutOutBtn";
-import { MatchGame, useGameStore } from "@/stores/gameStore";
+import { MatchGame, useGameStore } from "@/match-game/store/gameStore";
 import { usePickStore } from "@/stores/pickStore";
 import { useMatchStore } from "@/macth/store/matchStore";
 import { useTagStore } from "@/stores/tagStore";

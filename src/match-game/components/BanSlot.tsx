@@ -1,31 +1,49 @@
+import { MouseEvent } from "react";
 import { Icon } from "@iconify/react";
 import { Ban } from "../match-game.types";
 import { usePickAndBanStore } from "../store/pickAndBanStore";
 import { IconSlot } from "./PickSlot";
+import { useDroppable } from "@dnd-kit/react";
 
 export const BanSlot = ({ ban }: { ban: Ban }) => {
+    const { ref, isDropTarget } = useDroppable({
+        id: ban.id,
+        data: { ban },
+    });
+
     const { hero, is_active, is_locked } = ban;
     const { loadingBanIds, updateBan } = usePickAndBanStore();
     const isLoading = loadingBanIds.has(ban.id);
 
-    const toggleLock = () => {
+    const toggleLock = (e: MouseEvent) => {
+        e.stopPropagation();
         updateBan(ban.id, { is_locked: !is_locked });
+    };
+
+    const toggleActive = () => {
+        updateBan(ban.id, { is_active: !is_active });
+    };
+
+    const resetHero = () => {
+        updateBan(ban.id, { hero_id: null, is_active: true });
     };
 
     return (
         <div
+            ref={ref}
+            onClick={toggleActive}
             className={`
-                flex justify-end items-end
+                flex justify-center items-center
                 w-full h-full 
-                border p-2 relative
+                border relative
                 ${!hero && 'bg-slate-900/50'}
                 ${is_active ? 'border-amber-400 animate-pulse' : 'border-slate-600'}
+                ${isDropTarget && is_active ? 'ring-2 ring-amber-400/70 brightness-110' : ''}
             `}
             style={hero ? {
                 backgroundImage: `url(${hero.image_slot_url})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center 20%',
-                opacity: 0.6
             } : {}}
         >
             {isLoading && (
@@ -51,10 +69,19 @@ export const BanSlot = ({ ban }: { ban: Ban }) => {
                     </div>
                 </div>
             )}
-            <IconSlot
-                icon={!is_locked ? "oi:lock-unlocked" : "oi:lock-locked"}
-                onClick={toggleLock}
-            />
+            {hero && (
+                <IconSlot
+                    size="text-4xl opacity-50 hover:opacity-100"
+                    icon="boxicons:refresh-cw-alt-dot-filled"
+                    onClick={resetHero}
+                />
+            )}
+            {/* <div className="absolute bottom-0 right-0">
+                <IconSlot
+                    icon={!is_locked ? "oi:lock-unlocked" : "oi:lock-locked"}
+                    onClick={toggleLock}
+                />
+            </div> */}
         </div>
     );
 }

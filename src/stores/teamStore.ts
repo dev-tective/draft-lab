@@ -19,7 +19,7 @@ export interface Team {
     id: number;
     name: string;
     acronym?: string | null;
-    logo_url?: string;
+    logo_url?: string | null;
     coach?: string | null;
     created_at: string;
     room_id: string;

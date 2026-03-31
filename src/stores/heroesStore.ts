@@ -111,11 +111,18 @@ export const useHeroesStore = create<HeroesState>((set, get) => ({
 
         let filtered = allHeroes;
 
-        if (laneId != 0) {
-            filtered = allHeroes.filter(hero =>
-                hero.lanes.some(lane => lane.id === laneId)
-            );
+        if (laneId !== 0) {
+            filtered = allHeroes.filter(hero => {
+                const hasLane = hero.lanes.some((lane: any) => 
+                    lane.id === laneId || 
+                    (Array.isArray(lane) && lane.some((l: any) => l.id === laneId)) ||
+                    (lane.lane_id === laneId)
+                );
+                return hasLane;
+            });
         }
+        
+        console.log(`Filtering by lane ${laneId}. Total: ${allHeroes.length}, Filtered: ${filtered.length}`);
 
         set({
             heroes: filtered,

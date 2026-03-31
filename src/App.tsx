@@ -4,6 +4,7 @@ import { Layout } from "./layout/Layout";
 import { RoomPage } from "./room/RoomPage";
 import { MatchPage } from "./macth/MatchPage";
 import { MatchGamePage } from "./match-game/MatchGamePage";
+import { DraftOverlay } from "./overlay/DraftOverlay";
 
 function App() {
   
@@ -40,6 +41,12 @@ function App() {
             <Layout>
               <MatchGamePage />
             </Layout>
+          }
+        />
+        <Route
+          path="/:roomId/:matchId/:gameNumber/overlay"
+          element={
+            <DraftOverlay />
           }
         />
         {/* <Route
