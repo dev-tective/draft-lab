@@ -1,4 +1,4 @@
-import { MouseEvent } from "react";
+// import { MouseEvent } from "react";
 import { Icon } from "@iconify/react";
 import { Ban } from "../match-game.types";
 import { usePickAndBanStore } from "../store/pickAndBanStore";
@@ -11,14 +11,14 @@ export const BanSlot = ({ ban }: { ban: Ban }) => {
         data: { ban },
     });
 
-    const { hero, is_active, is_locked } = ban;
+    const { hero, is_active } = ban;
     const { loadingBanIds, updateBan } = usePickAndBanStore();
     const isLoading = loadingBanIds.has(ban.id);
 
-    const toggleLock = (e: MouseEvent) => {
-        e.stopPropagation();
-        updateBan(ban.id, { is_locked: !is_locked });
-    };
+    // const toggleLock = (e: MouseEvent) => {
+    //     e.stopPropagation();
+    //     updateBan(ban.id, { is_locked: !is_locked });
+    // };
 
     const toggleActive = () => {
         updateBan(ban.id, { is_active: !is_active });

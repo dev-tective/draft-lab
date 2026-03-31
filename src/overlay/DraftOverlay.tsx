@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRoomStore } from "@/room/store/roomStore";
 import { usePickAndBanStore } from "@/match-game/store/pickAndBanStore";
 import { useMatchStore } from "@/macth/store/matchStore";
-import { DraftSlot } from "./components/DraftSlot";
 import { Draft } from "./components/Draft";
 import { useTeamStore } from "@/stores/teamStore";
 import DEFAULT_LOGO from "@/assets/ui/shield.svg";
