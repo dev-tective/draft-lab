@@ -53,7 +53,7 @@ export const RoomPage = () => {
                 ) : !activeRoom ? (
                     <WarningMessage
                         title="Sala no encontrada"
-                        message="No se encontro una sala activa. Crea una nueva sala o uneete a una existente."
+                        message="No se encontro una sala activa. Crea una nueva sala o únete a una existente."
                     />
                 ) : (
                     <RoomContent />
