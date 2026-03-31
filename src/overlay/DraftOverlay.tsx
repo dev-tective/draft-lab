@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useGameStore } from "@/match-game/store/gameStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRoomStore } from "@/room/store/roomStore";
 import { usePickAndBanStore } from "@/match-game/store/pickAndBanStore";
 import { useMatchStore } from "@/macth/store/matchStore";
@@ -21,11 +21,11 @@ export const DraftOverlay = () => {
     const { subscribeToMatch, games } = useGameStore();
     const { subscribeToGame, redPicks, bluePicks, redBans, blueBans } = usePickAndBanStore();
 
-    const currentGame = games.find(g => 
-        g.match_id === Number(matchId) && 
+    const currentGame = games.find(g =>
+        g.match_id === Number(matchId) &&
         g.game_number === Number(gameNumber)
     );
-    
+
     useEffect(() => {
         if (roomId && matchId) {
             subscribeToRoomStaff(roomId);
@@ -42,12 +42,25 @@ export const DraftOverlay = () => {
             }
         }
     }, [roomId, matchId, gameNumber, games, currentGame]);
-    
+
+    const [ready, setReady] = useState(false);
+
+    const allHeroUrls = [
+    ...bluePicks.map(p => p?.hero?.image_slot_url),
+    ...redPicks.map(p => p?.hero?.image_slot_url),
+    ...blueBans.map(p => p?.hero?.image_slot_url),
+    ...redBans.map(p => p?.hero?.image_slot_url),
+    currentGame?.team_blue?.logo_url,
+    currentGame?.team_red?.logo_url,
+    ];
+
     return (
-        <div className="
-            flex
-            min-w-dvw bg-slate-700
-        ">
+        <>
+        {!ready && (
+                <ImagePreloader urls={allHeroUrls} onReady={() => setReady(true)} />
+            )}
+        <div className={`flex min-w-dvw bg-slate-700 ${!ready ? "invisible" : ""}`}>
+            
             <Draft picks={bluePicks} bans={blueBans} team="blue" coach={currentGame?.team_blue?.coach} />
             <div className="
                 w-1/5 flex flex-col justify-between 
@@ -70,9 +83,9 @@ export const DraftOverlay = () => {
                     {/* BLUE SIDE */}
                     <div className="flex items-center gap-4 text-blue-600 drop-shadow-sm">
                         <div className="flex flex-col items-center">
-                            <img 
-                                src={currentGame?.team_blue?.logo_url || DEFAULT_LOGO} 
-                                alt="Blue Team" 
+                            <img
+                                src={currentGame?.team_blue?.logo_url || DEFAULT_LOGO}
+                                alt="Blue Team"
                                 className="w-10 h-10 md:w-12 md:h-12 object-contain drop-shadow-md"
                             />
                             <span className="font-black text-[10px] md:text-lg uppercase tracking-tighter truncate max-w-20">
@@ -92,9 +105,9 @@ export const DraftOverlay = () => {
                             {games.filter(g => g.winner_team_id === currentGame?.team_red_id).length}
                         </span>
                         <div className="flex flex-col items-center text-right">
-                            <img 
-                                src={currentGame?.team_red?.logo_url || DEFAULT_LOGO} 
-                                alt="Red Team" 
+                            <img
+                                src={currentGame?.team_red?.logo_url || DEFAULT_LOGO}
+                                alt="Red Team"
                                 className="w-10 h-10 md:w-12 md:h-12 object-contain drop-shadow-md"
                             />
                             <span className="font-black text-[10px] md:text-lg uppercase tracking-tighter truncate max-w-20">
@@ -106,5 +119,30 @@ export const DraftOverlay = () => {
             </div>
             <Draft picks={redPicks} bans={redBans} team="red" coach={currentGame?.team_red?.coach} />
         </div>
+        </>
     );
 }
+
+// components/ImagePreloader.tsx
+interface Props {
+  urls: (string | undefined | null)[];
+  onReady: () => void;
+}
+
+export const ImagePreloader = ({ urls, onReady }: Props) => {
+  const validUrls = urls.filter(Boolean) as string[];
+  let loaded = 0;
+
+  const handleLoad = () => {
+    loaded++;
+    if (loaded === validUrls.length) onReady();
+  };
+
+  return (
+    <div style={{ display: "none" }}>
+      {validUrls.map((url) => (
+        <img key={url} src={url} onLoad={handleLoad} onError={handleLoad} />
+      ))}
+    </div>
+  );
+};
