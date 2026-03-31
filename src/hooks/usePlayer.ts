@@ -20,7 +20,6 @@ export const useCreatePlayer = () => {
                     room_id: params.room_id,
                     profile_url: params.profile_url ?? null,
                     lane: params.lane ?? null,
-                    order: params.order ?? null,
                     is_active: params.is_active ?? false,
                 })
                 .select('*')
