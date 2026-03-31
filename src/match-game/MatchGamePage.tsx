@@ -134,7 +134,7 @@ export const MatchGamePage = () => {
                     </button>
                     <button
                         onClick={() => {
-                            const params = `/${localRoomId}/${matchId}/${currentGame?.game_number}/overlay`;
+                            const params = `/app/${localRoomId}/${matchId}/${currentGame?.game_number}/overlay`;
                             navigator.clipboard.writeText(
                                 window.location.origin + 
                                 params
